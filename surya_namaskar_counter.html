@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Surya Namaskar Counter</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f5f5f3;
+      --text: #1a1a18;
+      --text-secondary: #6b6b67;
+      --border: rgba(0,0,0,0.12);
+      --green: #1D9E75;
+      --green-light: #E1F5EE;
+      --green-dark: #085041;
+      --purple: #534AB7;
+      --purple-light: #EEEDFE;
+      --purple-dark: #3C3489;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1c1a;
+        --bg-secondary: #262624;
+        --text: #f0ede8;
+        --text-secondary: #9a9892;
+        --border: rgba(255,255,255,0.12);
+        --green-light: #04342C;
+        --green-dark: #9FE1CB;
+        --purple-light: #26215C;
+        --purple-dark: #CECBF6;
+      }
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1.5rem;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.25rem;
+    }
+
+    header .eyebrow {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .btn-group { display: flex; gap: 8px; }
+
+    button {
+      font-family: inherit;
+      font-size: 13px;
+      padding: 7px 16px;
+      border-radius: var(--radius-md);
+      border: 0.5px solid var(--border);
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    button:hover { background: var(--bg-secondary); }
+    button:active { transform: scale(0.98); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+
+    .metric-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .metric-val {
+      font-size: 28px;
+      font-weight: 500;
+    }
+
+    .metric-sub {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--purple);
+      margin-top: 4px;
+    }
+
+    .metric-hint {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .camera-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #111;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 10px;
+    }
+
+    #vid {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+      display: none;
+    }
+
+    #cv {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+    }
+
+    #cam-msg {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: #fff;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    #cam-msg i { font-size: 36px; display: block; margin-bottom: 10px; }
+
+    #status-bar {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 6px;
+      min-height: 28px;
+      margin-bottom: 10px;
+    }
+
+    .progress-wrap { margin-bottom: 1rem; }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .progress-track {
+      height: 6px;
+      background: var(--bg-secondary);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    #prog-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--green);
+      border-radius: 999px;
+      transition: width 0.4s ease;
+    }
+
+    .pose-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 6px;
+      margin-bottom: 1rem;
+    }
+
+    .pose-cell {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      padding: 6px 4px;
+      text-align: center;
+      border: 1.5px solid transparent;
+      transition: all 0.3s;
+      cursor: default;
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .pose-cell .emoji { font-size: 15px; display: block; margin-bottom: 2px; }
+    .pose-cell.active { background: var(--purple-light); border-color: var(--purple); color: var(--purple-dark); }
+    .pose-cell.done   { background: var(--green-light);  border-color: var(--green);  color: var(--green-dark); }
+
+    footer {
+      font-size: 11px;
+      color: var(--text-secondary);
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <div class="eyebrow">Surya Namaskar</div>
+      <h1>Pose Counter</h1>
+    </div>
+    <div class="btn-group">
+      <button id="startBtn" onclick="toggleCamera()">
+        <i class="ti ti-player-play"></i> Start
+      </button>
+      <button onclick="resetAll()">
+        <i class="ti ti-refresh"></i> Reset
+      </button>
+    </div>
+  </header>
+
+  <div class="metrics">
+    <div class="metric-card">
+      <div class="metric-label">Rounds Done</div>
+      <div class="metric-val" id="rounds">0</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Current Pose</div>
+      <div class="metric-sub" id="pose-name">—</div>
+      <div class="metric-hint" id="pose-num"></div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Hold</div>
+      <div class="metric-val" id="hold-count">—</div>
+    </div>
+  </div>
+
+  <div class="camera-wrap">
+    <video id="vid" autoplay muted playsinline></video>
+    <canvas id="cv"></canvas>
+    <div id="cam-msg">
+      <i class="ti ti-camera"></i>
+      Press Start to begin
+    </div>
+  </div>
+
+  <div id="status-bar">Model not loaded</div>
+
+  <div class="progress-wrap">
+    <div class="progress-header">
+      <span>Progress through 12 poses</span>
+      <span id="prog-label">0 / 12</span>
+    </div>
+    <div class="progress-track">
+      <div id="prog-bar"></div>
+    </div>
+  </div>
+
+  <div class="pose-grid" id="pose-grid"></div>
+
+  <footer>
+    <i class="ti ti-info-circle" style="font-size:13px; vertical-align:-2px;"></i>
+    Stand 6–8 ft from camera · Full body in frame · Good lighting
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+  <script>
+    const POSE_LIST = [
+      { id:1,  name:"Pranamasana",           hint:"Stand, palms together at chest" },
+      { id:2,  name:"Hasta Uttanasana",       hint:"Arms stretched up, slight backbend" },
+      { id:3,  name:"Hastapadasana",          hint:"Forward fold, hands near feet" },
+      { id:4,  name:"Ashwa Sanchalanasana",   hint:"Right leg back, left knee bent" },
+      { id:5,  name:"Dandasana",              hint:"Plank — body straight" },
+      { id:6,  name:"Ashtanga Namaskara",     hint:"Knees-chest-chin to floor" },
+      { id:7,  name:"Bhujangasana",           hint:"Cobra — chest lifted, hips down" },
+      { id:8,  name:"Adho Mukha Svanasana",   hint:"Downward dog — hips high" },
+      { id:9,  name:"Ashwa Sanchalanasana",   hint:"Left leg back, right knee bent" },
+      { id:10, name:"Hastapadasana",          hint:"Forward fold again" },
+      { id:11, name:"Hasta Uttanasana",       hint:"Arms up, slight backbend" },
+      { id:12, name:"Pranamasana",            hint:"Return to prayer" },
+    ];
+
+    const EMOJIS = ['🙏','🙆','🤸','🏇','🪵','🙇','🐍','🐕','🏇','🤸','🙆','🙏'];
+
+    const KP = {
+      nose:0, leftShoulder:5, rightShoulder:6,
+      leftElbow:7, rightElbow:8, leftWrist:9, rightWrist:10,
+      leftHip:11, rightHip:12, leftKnee:13, rightKnee:14,
+      leftAnkle:15, rightAnkle:16
+    };
+
+    let detector = null, stream = null, raf = null;
+    let running = false;
+    let poseIdx = 0, rounds = 0, holdFrames = 0;
+    const HOLD_NEEDED = 14;
+
+    function angle(a, b, c) {
+      const r = Math.atan2(c[1]-b[1], c[0]-b[0]) - Math.atan2(a[1]-b[1], a[0]-b[0]);
+      let d = Math.abs(r * 180 / Math.PI);
+      return d > 180 ? 360 - d : d;
+    }
+
+    function kp(lm, name) {
+      const k = lm[KP[name]];
+      return k && k.score > 0.25 ? [k.x, k.y] : null;
+    }
+
+    function classifyPose(lm) {
+      const ls = kp(lm,'leftShoulder'),  rs = kp(lm,'rightShoulder');
+      const lh = kp(lm,'leftHip'),      rh = kp(lm,'rightHip');
+      const lk = kp(lm,'leftKnee'),     rk = kp(lm,'rightKnee');
+      const la = kp(lm,'leftAnkle'),    ra = kp(lm,'rightAnkle');
+      const lw = kp(lm,'leftWrist'),    rw = kp(lm,'rightWrist');
+      const le = kp(lm,'leftElbow'),    re = kp(lm,'rightElbow');
+      const nose = kp(lm,'nose');
+      if (!ls||!rs||!lh||!rh||!lk||!rk||!la||!ra) return -1;
+
+      const mS = [(ls[0]+rs[0])/2, (ls[1]+rs[1])/2];
+      const mH = [(lh[0]+rh[0])/2, (lh[1]+rh[1])/2];
+      const mK = [(lk[0]+rk[0])/2, (lk[1]+rk[1])/2];
+      const mW = lw && rw ? [(lw[0]+rw[0])/2, (lw[1]+rw[1])/2] : null;
+
+      const hipAng  = angle(mS, mH, mK);
+      const kneeL   = angle(lh, lk, la);
+      const kneeR   = angle(rh, rk, ra);
+      const avgKnee = (kneeL + kneeR) / 2;
+      const elbL    = le && lw ? angle(ls, le, lw) : 180;
+      const elbR    = re && rw ? angle(rs, re, rw) : 180;
+
+      const bodyH      = Math.abs(mS[1]-mH[1]) < 0.12;
+      const upright    = hipAng > 155 && avgKnee > 155;
+      const torsoFold  = hipAng < 75;
+      const armsUp     = mW ? mW[1] < mS[1] - 0.08 : false;
+      const asymKnee   = Math.abs(kneeL - kneeR) > 45;
+      const hipsHigh   = mH[1] < mS[1] - 0.05 && mH[1] < mK[1] - 0.05;
+      const palmsClose = lw && rw ? Math.abs(lw[0]-rw[0]) < 0.15 : false;
+
+      const t = poseIdx;
+      if (t===0||t===11) return (upright && palmsClose && !armsUp) ? t : -1;
+      if (t===1||t===10) return (upright && armsUp) ? t : -1;
+      if (t===2||t===9)  return (torsoFold && avgKnee > 140) ? t : -1;
+      if (t===3||t===8)  return (asymKnee && !bodyH && mH[1] > 0.45) ? t : -1;
+      if (t===4)         return (bodyH && avgKnee > 150) ? t : -1;
+      if (t===5)         return (bodyH && mH[1] > mS[1]+0.05 && elbL < 95 && elbR < 95) ? t : -1;
+      if (t===6)         return (bodyH && mS[1] < mH[1] && elbL > 110 && elbR > 110 && (nose ? nose[1] < mS[1] : true)) ? t : -1;
+      if (t===7)         return hipsHigh ? t : -1;
+      return -1;
+    }
+
+    function buildGrid() {
+      const g = document.getElementById('pose-grid');
+      g.innerHTML = '';
+      POSE_LIST.forEach((p, i) => {
+        const d = document.createElement('div');
+        d.className = 'pose-cell';
+        d.id = `pc-${i}`;
+        d.title = p.hint;
+        d.innerHTML = `<span class="emoji">${EMOJIS[i]}</span>${p.id}`;
+        g.appendChild(d);
+      });
+    }
+
+    function refreshGrid() {
+      POSE_LIST.forEach((_, i) => {
+        const c = document.getElementById(`pc-${i}`);
+        if (!c) return;
+        c.className = 'pose-cell' + (i === poseIdx ? ' active' : i < poseIdx ? ' done' : '');
+      });
+    }
+
+    function setStatus(msg) { document.getElementById('status-bar').textContent = msg; }
+
+    function updateUI() {
+      document.getElementById('rounds').textContent = rounds;
+      document.getElementById('pose-name').textContent = POSE_LIST[poseIdx].name;
+      document.getElementById('pose-num').textContent = `Pose ${poseIdx+1} of 12`;
+      document.getElementById('hold-count').textContent = holdFrames > 0 ? Math.round((holdFrames/HOLD_NEEDED)*100)+'%' : '—';
+      const pct = Math.round((poseIdx % 12) / 12 * 100);
+      document.getElementById('prog-bar').style.width = pct + '%';
+      document.getElementById('prog-label').textContent = `${poseIdx % 12} / 12`;
+      refreshGrid();
+    }
+
+    function drawSkeleton(ctx, lm, w, h) {
+      const pairs = [[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
+      ctx.strokeStyle = '#1D9E75'; ctx.lineWidth = 2;
+      pairs.forEach(([a,b]) => {
+        const ka = lm[a], kb = lm[b];
+        if (ka && kb && ka.score > 0.25 && kb.score > 0.25) {
+          ctx.beginPath();
+          ctx.moveTo(w - ka.x, ka.y);
+          ctx.lineTo(w - kb.x, kb.y);
+          ctx.stroke();
+        }
+      });
+      ctx.fillStyle = '#7F77DD';
+      lm.forEach(k => {
+        if (k && k.score > 0.25) {
+          ctx.beginPath();
+          ctx.arc(w - k.x, k.y, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
+    }
+
+    async function loop() {
+      const vid = document.getElementById('vid');
+      const cv  = document.getElementById('cv');
+      if (!detector || !running) return;
+      cv.width  = vid.videoWidth  || 640;
+      cv.height = vid.videoHeight || 360;
+      const ctx = cv.getContext('2d');
+      ctx.save();
+      ctx.scale(-1, 1);
+      ctx.drawImage(vid, -cv.width, 0, cv.width, cv.height);
+      ctx.restore();
+
+      try {
+        const poses = await detector.estimatePoses(vid, { flipHorizontal: false });
+        if (poses.length > 0) {
+          const lm = poses[0].keypoints;
+          const detected = classifyPose(lm);
+          if (detected === poseIdx) {
+            holdFrames++;
+            setStatus(`✓ Holding ${POSE_LIST[poseIdx].name}… ${Math.round((holdFrames/HOLD_NEEDED)*100)}%`);
+            if (holdFrames >= HOLD_NEEDED) {
+              holdFrames = 0;
+              poseIdx++;
+              if (poseIdx >= 12) { poseIdx = 0; rounds++; }
+              setStatus(`✅ Pose done! Next: ${POSE_LIST[poseIdx].name}`);
+            }
+          } else {
+            holdFrames = Math.max(0, holdFrames - 1);
+            setStatus(`Waiting for: ${POSE_LIST[poseIdx].name} — ${POSE_LIST[poseIdx].hint}`);
+          }
+          drawSkeleton(ctx, lm, cv.width, cv.height);
+        } else {
+          setStatus('No person detected — step into frame');
+          holdFrames = 0;
+        }
+      } catch(e) { console.error(e); }
+
+      updateUI();
+      if (running) raf = requestAnimationFrame(loop);
+    }
+
+    async function toggleCamera() {
+      const btn = document.getElementById('startBtn');
+      if (running) {
+        running = false;
+        if (raf) cancelAnimationFrame(raf);
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        btn.innerHTML = '<i class="ti ti-player-play"></i> Start';
+        document.getElementById('cam-msg').style.display = 'block';
+        document.getElementById('vid').style.display = 'none';
+        setStatus('Paused');
+        return;
+      }
+
+      btn.innerHTML = '<i class="ti ti-loader"></i> Loading…';
+      btn.disabled = true;
+      setStatus('Loading MoveNet model…');
+
+      try {
+        if (!detector) {
+          await tf.ready();
+          detector = await poseDetection.createDetector(
+            poseDetection.SupportedModels.MoveNet,
+            { modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER }
+          );
+        }
+        setStatus('Model ready — starting camera…');
+        stream = await navigator.mediaDevices.getUserMedia({ video: { width:640, height:360, facingMode:'user' }, audio:false });
+        const vid = document.getElementById('vid');
+        vid.srcObject = stream;
+        await new Promise(r => vid.onloadedmetadata = r);
+        vid.style.display = 'block';
+        document.getElementById('cam-msg').style.display = 'none';
+        running = true;
+        btn.innerHTML = '<i class="ti ti-player-pause"></i> Pause';
+        btn.disabled = false;
+        setStatus(`Waiting for: ${POSE_LIST[poseIdx].name} — ${POSE_LIST[poseIdx].hint}`);
+        loop();
+      } catch(e) {
+        setStatus('Error: ' + (e.message || 'Camera or model failed to load'));
+        btn.innerHTML = '<i class="ti ti-player-play"></i> Start';
+        btn.disabled = false;
+      }
+    }
+
+    function resetAll() {
+      poseIdx = 0; rounds = 0; holdFrames = 0;
+      document.getElementById('rounds').textContent = '0';
+      document.getElementById('hold-count').textContent = '—';
+      document.getElementById('prog-bar').style.width = '0%';
+      document.getElementById('prog-label').textContent = '0 / 12';
+      refreshGrid();
+      if (running) setStatus(`Waiting for: ${POSE_LIST[0].name} — ${POSE_LIST[0].hint}`);
+    }
+
+    buildGrid();
+    refreshGrid();
+    updateUI();
+  </script>
+</body>
+</html>
