@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+ 
     :root {
       --bg: #ffffff;
       --bg-secondary: #f5f5f3;
@@ -23,7 +23,7 @@
       --radius-md: 8px;
       --radius-lg: 12px;
     }
-
+ 
     @media (prefers-color-scheme: dark) {
       :root {
         --bg: #1c1c1a;
@@ -37,7 +37,7 @@
         --purple-dark: #CECBF6;
       }
     }
-
+ 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       background: var(--bg);
@@ -47,14 +47,14 @@
       max-width: 720px;
       margin: 0 auto;
     }
-
+ 
     header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 1.25rem;
     }
-
+ 
     header .eyebrow {
       font-size: 11px;
       color: var(--text-secondary);
@@ -62,14 +62,14 @@
       letter-spacing: 0.06em;
       margin-bottom: 2px;
     }
-
+ 
     header h1 {
       font-size: 22px;
       font-weight: 500;
     }
-
+ 
     .btn-group { display: flex; gap: 8px; }
-
+ 
     button {
       font-family: inherit;
       font-size: 13px;
@@ -87,45 +87,45 @@
     button:hover { background: var(--bg-secondary); }
     button:active { transform: scale(0.98); }
     button:disabled { opacity: 0.5; cursor: not-allowed; }
-
+ 
     .metrics {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 10px;
       margin-bottom: 1rem;
     }
-
+ 
     .metric-card {
       background: var(--bg-secondary);
       border-radius: var(--radius-md);
       padding: 1rem;
       text-align: center;
     }
-
+ 
     .metric-label {
       font-size: 12px;
       color: var(--text-secondary);
       margin-bottom: 4px;
     }
-
+ 
     .metric-val {
       font-size: 28px;
       font-weight: 500;
     }
-
+ 
     .metric-sub {
       font-size: 13px;
       font-weight: 500;
       color: var(--purple);
       margin-top: 4px;
     }
-
+ 
     .metric-hint {
       font-size: 11px;
       color: var(--text-secondary);
       margin-top: 2px;
     }
-
+ 
     .camera-wrap {
       position: relative;
       width: 100%;
@@ -135,7 +135,7 @@
       overflow: hidden;
       margin-bottom: 10px;
     }
-
+ 
     #vid {
       width: 100%;
       height: 100%;
@@ -143,13 +143,13 @@
       transform: scaleX(-1);
       display: none;
     }
-
+ 
     #cv {
       position: absolute;
       top: 0; left: 0;
       width: 100%; height: 100%;
     }
-
+ 
     #cam-msg {
       position: absolute;
       top: 50%; left: 50%;
@@ -158,9 +158,9 @@
       font-size: 14px;
       text-align: center;
     }
-
+ 
     #cam-msg i { font-size: 36px; display: block; margin-bottom: 10px; }
-
+ 
     #status-bar {
       font-size: 13px;
       color: var(--text-secondary);
@@ -169,9 +169,9 @@
       min-height: 28px;
       margin-bottom: 10px;
     }
-
+ 
     .progress-wrap { margin-bottom: 1rem; }
-
+ 
     .progress-header {
       display: flex;
       justify-content: space-between;
@@ -179,14 +179,14 @@
       color: var(--text-secondary);
       margin-bottom: 6px;
     }
-
+ 
     .progress-track {
       height: 6px;
       background: var(--bg-secondary);
       border-radius: 999px;
       overflow: hidden;
     }
-
+ 
     #prog-bar {
       height: 100%;
       width: 0%;
@@ -194,14 +194,14 @@
       border-radius: 999px;
       transition: width 0.4s ease;
     }
-
+ 
     .pose-grid {
       display: grid;
       grid-template-columns: repeat(6, 1fr);
       gap: 6px;
       margin-bottom: 1rem;
     }
-
+ 
     .pose-cell {
       background: var(--bg-secondary);
       border-radius: var(--radius-md);
@@ -214,11 +214,11 @@
       color: var(--text-secondary);
       line-height: 1.4;
     }
-
+ 
     .pose-cell .emoji { font-size: 15px; display: block; margin-bottom: 2px; }
     .pose-cell.active { background: var(--purple-light); border-color: var(--purple); color: var(--purple-dark); }
     .pose-cell.done   { background: var(--green-light);  border-color: var(--green);  color: var(--green-dark); }
-
+ 
     footer {
       font-size: 11px;
       color: var(--text-secondary);
@@ -227,7 +227,7 @@
   </style>
 </head>
 <body>
-
+ 
   <header>
     <div>
       <div class="eyebrow">Surya Namaskar</div>
@@ -242,7 +242,7 @@
       </button>
     </div>
   </header>
-
+ 
   <div class="metrics">
     <div class="metric-card">
       <div class="metric-label">Rounds Done</div>
@@ -258,7 +258,7 @@
       <div class="metric-val" id="hold-count">—</div>
     </div>
   </div>
-
+ 
   <div class="camera-wrap">
     <video id="vid" autoplay muted playsinline></video>
     <canvas id="cv"></canvas>
@@ -267,9 +267,9 @@
       Press Start to begin
     </div>
   </div>
-
+ 
   <div id="status-bar">Model not loaded</div>
-
+ 
   <div class="progress-wrap">
     <div class="progress-header">
       <span>Progress through 12 poses</span>
@@ -279,14 +279,14 @@
       <div id="prog-bar"></div>
     </div>
   </div>
-
+ 
   <div class="pose-grid" id="pose-grid"></div>
-
+ 
   <footer>
     <i class="ti ti-info-circle" style="font-size:13px; vertical-align:-2px;"></i>
     Stand 6–8 ft from camera · Full body in frame · Good lighting
   </footer>
-
+ 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
   <script>
@@ -304,33 +304,33 @@
       { id:11, name:"Hasta Uttanasana",       hint:"Arms up, slight backbend" },
       { id:12, name:"Pranamasana",            hint:"Return to prayer" },
     ];
-
+ 
     const EMOJIS = ['🙏','🙆','🤸','🏇','🪵','🙇','🐍','🐕','🏇','🤸','🙆','🙏'];
-
+ 
     const KP = {
       nose:0, leftShoulder:5, rightShoulder:6,
       leftElbow:7, rightElbow:8, leftWrist:9, rightWrist:10,
       leftHip:11, rightHip:12, leftKnee:13, rightKnee:14,
       leftAnkle:15, rightAnkle:16
     };
-
+ 
     let detector = null, stream = null, raf = null;
     let running = false;
     let poseIdx = 0, rounds = 0, holdFrames = 0;
     const HOLD_NEEDED = 14;
-
+ 
     function angle(a, b, c) {
       const r = Math.atan2(c[1]-b[1], c[0]-b[0]) - Math.atan2(a[1]-b[1], a[0]-b[0]);
       let d = Math.abs(r * 180 / Math.PI);
       return d > 180 ? 360 - d : d;
     }
-
+ 
     function kp(lm, name) {
       const k = lm[KP[name]];
       return k && k.score > 0.25 ? [k.x, k.y] : null;
     }
-
-    function classifyPose(lm) {
+ 
+    function classifyPose(lm, w, h) {
       const ls = kp(lm,'leftShoulder'),  rs = kp(lm,'rightShoulder');
       const lh = kp(lm,'leftHip'),      rh = kp(lm,'rightHip');
       const lk = kp(lm,'leftKnee'),     rk = kp(lm,'rightKnee');
@@ -339,39 +339,39 @@
       const le = kp(lm,'leftElbow'),    re = kp(lm,'rightElbow');
       const nose = kp(lm,'nose');
       if (!ls||!rs||!lh||!rh||!lk||!rk||!la||!ra) return -1;
-
+ 
       const mS = [(ls[0]+rs[0])/2, (ls[1]+rs[1])/2];
       const mH = [(lh[0]+rh[0])/2, (lh[1]+rh[1])/2];
       const mK = [(lk[0]+rk[0])/2, (lk[1]+rk[1])/2];
       const mW = lw && rw ? [(lw[0]+rw[0])/2, (lw[1]+rw[1])/2] : null;
-
+ 
       const hipAng  = angle(mS, mH, mK);
       const kneeL   = angle(lh, lk, la);
       const kneeR   = angle(rh, rk, ra);
       const avgKnee = (kneeL + kneeR) / 2;
       const elbL    = le && lw ? angle(ls, le, lw) : 180;
       const elbR    = re && rw ? angle(rs, re, rw) : 180;
-
-      const bodyH      = Math.abs(mS[1]-mH[1]) < 0.12;
+ 
+      const bodyH      = Math.abs(mS[1]-mH[1]) < 0.12 * h;
       const upright    = hipAng > 155 && avgKnee > 155;
       const torsoFold  = hipAng < 75;
-      const armsUp     = mW ? mW[1] < mS[1] - 0.08 : false;
+      const armsUp     = mW ? mW[1] < mS[1] - 0.08 * h : false;
       const asymKnee   = Math.abs(kneeL - kneeR) > 45;
-      const hipsHigh   = mH[1] < mS[1] - 0.05 && mH[1] < mK[1] - 0.05;
-      const palmsClose = lw && rw ? Math.abs(lw[0]-rw[0]) < 0.15 : false;
-
+      const hipsHigh   = mH[1] < mS[1] - 0.05 * h && mH[1] < mK[1] - 0.05 * h;
+      const palmsClose = lw && rw ? Math.abs(lw[0]-rw[0]) < 0.15 * w : false;
+ 
       const t = poseIdx;
       if (t===0||t===11) return (upright && palmsClose && !armsUp) ? t : -1;
       if (t===1||t===10) return (upright && armsUp) ? t : -1;
       if (t===2||t===9)  return (torsoFold && avgKnee > 140) ? t : -1;
-      if (t===3||t===8)  return (asymKnee && !bodyH && mH[1] > 0.45) ? t : -1;
+      if (t===3||t===8)  return (asymKnee && !bodyH && mH[1] > 0.45 * h) ? t : -1;
       if (t===4)         return (bodyH && avgKnee > 150) ? t : -1;
-      if (t===5)         return (bodyH && mH[1] > mS[1]+0.05 && elbL < 95 && elbR < 95) ? t : -1;
+      if (t===5)         return (bodyH && mH[1] > mS[1] + 0.05 * h && elbL < 95 && elbR < 95) ? t : -1;
       if (t===6)         return (bodyH && mS[1] < mH[1] && elbL > 110 && elbR > 110 && (nose ? nose[1] < mS[1] : true)) ? t : -1;
       if (t===7)         return hipsHigh ? t : -1;
       return -1;
     }
-
+ 
     function buildGrid() {
       const g = document.getElementById('pose-grid');
       g.innerHTML = '';
@@ -384,7 +384,7 @@
         g.appendChild(d);
       });
     }
-
+ 
     function refreshGrid() {
       POSE_LIST.forEach((_, i) => {
         const c = document.getElementById(`pc-${i}`);
@@ -392,9 +392,9 @@
         c.className = 'pose-cell' + (i === poseIdx ? ' active' : i < poseIdx ? ' done' : '');
       });
     }
-
+ 
     function setStatus(msg) { document.getElementById('status-bar').textContent = msg; }
-
+ 
     function updateUI() {
       document.getElementById('rounds').textContent = rounds;
       document.getElementById('pose-name').textContent = POSE_LIST[poseIdx].name;
@@ -405,7 +405,7 @@
       document.getElementById('prog-label').textContent = `${poseIdx % 12} / 12`;
       refreshGrid();
     }
-
+ 
     function drawSkeleton(ctx, lm, w, h) {
       const pairs = [[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
       ctx.strokeStyle = '#1D9E75'; ctx.lineWidth = 2;
@@ -427,7 +427,7 @@
         }
       });
     }
-
+ 
     async function loop() {
       const vid = document.getElementById('vid');
       const cv  = document.getElementById('cv');
@@ -439,12 +439,12 @@
       ctx.scale(-1, 1);
       ctx.drawImage(vid, -cv.width, 0, cv.width, cv.height);
       ctx.restore();
-
+ 
       try {
         const poses = await detector.estimatePoses(vid, { flipHorizontal: false });
         if (poses.length > 0) {
           const lm = poses[0].keypoints;
-          const detected = classifyPose(lm);
+          const detected = classifyPose(lm, cv.width, cv.height);
           if (detected === poseIdx) {
             holdFrames++;
             setStatus(`✓ Holding ${POSE_LIST[poseIdx].name}… ${Math.round((holdFrames/HOLD_NEEDED)*100)}%`);
@@ -464,11 +464,11 @@
           holdFrames = 0;
         }
       } catch(e) { console.error(e); }
-
+ 
       updateUI();
       if (running) raf = requestAnimationFrame(loop);
     }
-
+ 
     async function toggleCamera() {
       const btn = document.getElementById('startBtn');
       if (running) {
@@ -481,11 +481,11 @@
         setStatus('Paused');
         return;
       }
-
+ 
       btn.innerHTML = '<i class="ti ti-loader"></i> Loading…';
       btn.disabled = true;
       setStatus('Loading MoveNet model…');
-
+ 
       try {
         if (!detector) {
           await tf.ready();
@@ -512,7 +512,7 @@
         btn.disabled = false;
       }
     }
-
+ 
     function resetAll() {
       poseIdx = 0; rounds = 0; holdFrames = 0;
       document.getElementById('rounds').textContent = '0';
@@ -522,7 +522,7 @@
       refreshGrid();
       if (running) setStatus(`Waiting for: ${POSE_LIST[0].name} — ${POSE_LIST[0].hint}`);
     }
-
+ 
     buildGrid();
     refreshGrid();
     updateUI();
