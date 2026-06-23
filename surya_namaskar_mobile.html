@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Surya · Pose Counter</title>
+
+  <!-- PWA / installable app metadata -->
+  <meta name="theme-color" content="#1D9E75" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Surya" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%231c1c1a'/%3E%3Ccircle cx='256' cy='256' r='84' fill='%231D9E75'/%3E%3Cg stroke='%231D9E75' stroke-width='22' stroke-linecap='round'%3E%3Cline x1='256' y1='70' x2='256' y2='126'/%3E%3Cline x1='256' y1='386' x2='256' y2='442'/%3E%3Cline x1='70' y1='256' x2='126' y2='256'/%3E%3Cline x1='386' y1='256' x2='442' y2='256'/%3E%3Cline x1='124' y1='124' x2='164' y2='164'/%3E%3Cline x1='348' y1='348' x2='388' y2='388'/%3E%3Cline x1='388' y1='124' x2='348' y2='164'/%3E%3Cline x1='164' y1='348' x2='124' y2='388'/%3E%3C/g%3E%3C/svg%3E" />
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    :root {
+      --bg: #1c1c1a;
+      --bg-secondary: #262624;
+      --surface: #2f2f2c;
+      --text: #f0ede8;
+      --text-secondary: #9a9892;
+      --border: rgba(255,255,255,0.12);
+      --green: #1D9E75;
+      --green-light: #04342C;
+      --green-dark: #9FE1CB;
+      --purple: #7F77DD;
+      --purple-strong: #534AB7;
+      --purple-light: #26215C;
+      --purple-dark: #CECBF6;
+      --amber: #D69A3F;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-xl: 22px;
+      --dock-h: calc(76px + env(safe-area-inset-bottom));
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      touch-action: manipulation;
+    }
+
+    /* ---------- App shell ---------- */
+    .app {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      padding: env(safe-area-inset-top) env(safe-area-inset-right) 0 env(safe-area-inset-left);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px 8px;
+      flex: 0 0 auto;
+    }
+    .brand { display: flex; align-items: center; gap: 9px; }
+    .brand .logo {
+      width: 30px; height: 30px; border-radius: 9px;
+      background: var(--bg-secondary);
+      display: grid; place-items: center;
+    }
+    .brand .logo svg { width: 20px; height: 20px; }
+    .brand .name { font-size: 15px; font-weight: 600; letter-spacing: 0.01em; }
+    .brand .sub  { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; }
+
+    .topbar .icon-btn {
+      width: 38px; height: 38px; border-radius: 11px;
+      border: 0.5px solid var(--border); background: var(--bg-secondary);
+      color: var(--text); display: grid; place-items: center; font-size: 18px;
+    }
+    .topbar .icon-btn:active { background: var(--surface); }
+
+    /* ---------- Camera stage (hero) ---------- */
+    .stage {
+      flex: 1 1 auto;
+      position: relative;
+      margin: 0 12px;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      background: radial-gradient(120% 90% at 50% 0%, #20201d 0%, #131311 100%);
+      min-height: 0;
+    }
+
+    #vid {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+    #cv {
+      position: absolute; inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+
+    /* Idle prompt before camera starts */
+    .idle {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 28px; gap: 14px;
+    }
+    .idle .ring {
+      width: 92px; height: 92px; border-radius: 50%;
+      border: 1.5px dashed rgba(255,255,255,0.25);
+      display: grid; place-items: center;
+      color: var(--green-dark);
+    }
+    .idle .ring i { font-size: 38px; }
+    .idle h2 { font-size: 17px; font-weight: 600; }
+    .idle p { font-size: 13px; color: var(--text-secondary); max-width: 240px; line-height: 1.5; }
+
+    /* ---------- HUD overlaid on camera ---------- */
+    .hud { position: absolute; inset: 0; pointer-events: none; }
+
+    .hud-top {
+      position: absolute; top: 12px; left: 12px; right: 12px;
+      display: flex; align-items: flex-start; justify-content: space-between;
+    }
+    .pill {
+      backdrop-filter: blur(8px);
+      background: rgba(20,20,18,0.55);
+      border: 0.5px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .pill .num { color: var(--green-dark); }
+    .pill.live .dot { animation: pulse 1.4s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.25} }
+
+    .hud-bottom {
+      position: absolute; left: 12px; right: 12px; bottom: 12px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+
+    .pose-hud {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(20,20,18,0.55);
+      backdrop-filter: blur(8px);
+      border: 0.5px solid rgba(255,255,255,0.14);
+      border-radius: var(--radius-lg);
+      padding: 10px 12px;
+    }
+    .ringwrap { position: relative; width: 52px; height: 52px; flex: 0 0 auto; }
+    .ringwrap svg { transform: rotate(-90deg); }
+    .ringwrap .pct {
+      position: absolute; inset: 0; display: grid; place-items: center;
+      font-size: 12px; font-weight: 700; color: var(--green-dark);
+    }
+    .pose-hud .meta { min-width: 0; }
+    .pose-hud .emoji { font-size: 17px; line-height: 1; }
+    .pose-hud .nm {
+      font-size: 15px; font-weight: 600; line-height: 1.2;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .pose-hud .ct { font-size: 11px; color: var(--text-secondary); margin-top: 1px; }
+
+    /* 12-segment step strip */
+    .steps { display: flex; gap: 4px; }
+    .steps .seg {
+      flex: 1; height: 5px; border-radius: 999px;
+      background: rgba(255,255,255,0.16);
+      transition: background 0.3s;
+    }
+    .steps .seg.done    { background: var(--green); }
+    .steps .seg.active  { background: var(--purple); }
+    .steps .seg.skipped { background: var(--amber); }
+
+    /* ---------- Coaching line ---------- */
+    .coach {
+      flex: 0 0 auto;
+      min-height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      text-align: center;
+      font-size: 13px; line-height: 1.35;
+      color: var(--text-secondary);
+      padding: 9px 18px 4px;
+    }
+    .coach.cue   { color: var(--purple-dark); font-weight: 600; }
+    .coach.win   { color: var(--green-dark);  font-weight: 600; }
+    .coach.warn  { color: var(--amber);       font-weight: 600; }
+
+    /* ---------- Bottom dock ---------- */
+    .dock {
+      flex: 0 0 auto;
+      height: var(--dock-h);
+      padding: 0 18px env(safe-area-inset-bottom);
+      display: flex; align-items: center; justify-content: space-between; gap: 14px;
+    }
+    .dock-btn {
+      width: 56px; height: 56px; border-radius: 18px;
+      border: 0.5px solid var(--border); background: var(--bg-secondary);
+      color: var(--text); display: grid; place-items: center; font-size: 22px;
+      flex: 0 0 auto;
+    }
+    .dock-btn:active { transform: scale(0.94); }
+    .dock-btn:disabled { opacity: 0.4; }
+    .dock-btn .lbl { display: none; }
+
+    .start-btn {
+      flex: 1 1 auto;
+      height: 56px; border-radius: 18px; border: none;
+      background: var(--green); color: #04201a;
+      font-size: 16px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center; gap: 9px;
+      letter-spacing: 0.01em;
+    }
+    .start-btn i { font-size: 21px; }
+    .start-btn:active { transform: scale(0.985); filter: brightness(1.05); }
+    .start-btn.running { background: var(--surface); color: var(--text); border: 0.5px solid var(--border); }
+    .start-btn:disabled { opacity: 0.7; }
+
+    /* ---------- Slide-up sheet (poses + tips + debug) ---------- */
+    .scrim {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      opacity: 0; pointer-events: none; transition: opacity 0.25s; z-index: 20;
+    }
+    .scrim.open { opacity: 1; pointer-events: auto; }
+
+    .sheet {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+      background: var(--bg);
+      border-radius: 22px 22px 0 0;
+      border-top: 0.5px solid var(--border);
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(.32,.72,0,1);
+      max-height: 82vh; display: flex; flex-direction: column;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    .sheet.open { transform: translateY(0); }
+    .sheet .grab { width: 38px; height: 4px; border-radius: 999px; background: var(--border); margin: 10px auto 4px; }
+    .sheet .sheet-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 6px 18px 10px;
+    }
+    .sheet .sheet-head h3 { font-size: 16px; font-weight: 600; }
+    .sheet .sheet-head .close { font-size: 22px; color: var(--text-secondary); background: none; border: none; }
+    .sheet .body { overflow-y: auto; padding: 0 14px 18px; -webkit-overflow-scrolling: touch; }
+
+    .pose-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 9px 10px; border-radius: var(--radius-md);
+      transition: background 0.2s;
+    }
+    .pose-row + .pose-row { margin-top: 2px; }
+    .pose-row .ix {
+      width: 26px; height: 26px; border-radius: 8px; flex: 0 0 auto;
+      background: var(--bg-secondary); display: grid; place-items: center;
+      font-size: 12px; font-weight: 600; color: var(--text-secondary);
+    }
+    .pose-row .e { font-size: 19px; flex: 0 0 auto; width: 24px; text-align: center; }
+    .pose-row .tx { min-width: 0; }
+    .pose-row .tx .n { font-size: 14px; font-weight: 600; }
+    .pose-row .tx .h { font-size: 12px; color: var(--text-secondary); }
+    .pose-row.active { background: var(--purple-light); }
+    .pose-row.active .ix { background: var(--purple-strong); color: #fff; }
+    .pose-row.active .tx .n { color: var(--purple-dark); }
+    .pose-row.done .ix { background: var(--green); color: #04201a; }
+    .pose-row.skipped .ix { background: var(--amber); color: #2a1c06; }
+
+    .tip {
+      font-size: 12px; color: var(--text-secondary); line-height: 1.5;
+      background: var(--bg-secondary); border-radius: var(--radius-md);
+      padding: 11px 13px; margin: 14px 4px 4px;
+    }
+    .tip b { color: var(--text); font-weight: 600; }
+
+    .dbg-toggle {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px; margin: 12px 4px 0;
+      border-radius: var(--radius-md); background: var(--bg-secondary);
+      font-size: 13px; font-weight: 500;
+    }
+    .switch { width: 44px; height: 26px; border-radius: 999px; background: var(--surface); position: relative; border: 0.5px solid var(--border); transition: background 0.2s; }
+    .switch::after { content:''; position:absolute; top:2px; left:2px; width:20px; height:20px; border-radius:50%; background:#fff; transition: transform 0.2s; }
+    .switch.on { background: var(--green); }
+    .switch.on::after { transform: translateX(18px); }
+
+    #debug-panel {
+      display: none; font-family: 'SF Mono', Consolas, monospace; font-size: 11px;
+      background: var(--bg-secondary); border-radius: var(--radius-md);
+      padding: 11px 13px; margin: 10px 4px 0; color: var(--text-secondary); line-height: 1.8;
+    }
+    #debug-panel.show { display: block; }
+    #debug-panel .ok  { color: var(--green-dark); font-weight: 600; }
+    #debug-panel .bad { color: var(--text-secondary); }
+    #debug-panel .row { display: flex; justify-content: space-between; gap: 8px; }
+
+    @media (min-width: 560px) {
+      .app { max-width: 460px; margin: 0 auto; }
+      .dock-btn .lbl { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo">
+          <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="256" cy="256" r="84" fill="#1D9E75"/>
+            <g stroke="#1D9E75" stroke-width="26" stroke-linecap="round">
+              <line x1="256" y1="78" x2="256" y2="128"/><line x1="256" y1="384" x2="256" y2="434"/>
+              <line x1="78" y1="256" x2="128" y2="256"/><line x1="384" y1="256" x2="434" y2="256"/>
+              <line x1="130" y1="130" x2="166" y2="166"/><line x1="346" y1="346" x2="382" y2="382"/>
+              <line x1="382" y1="130" x2="346" y2="166"/><line x1="166" y1="346" x2="130" y2="382"/>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="sub">Surya Namaskar</div>
+          <div class="name">Pose Counter</div>
+        </div>
+      </div>
+      <button class="icon-btn" onclick="openSheet()" aria-label="Poses and settings">
+        <i class="ti ti-list-details"></i>
+      </button>
+    </div>
+
+    <div class="stage">
+      <video id="vid" autoplay muted playsinline></video>
+      <canvas id="cv"></canvas>
+
+      <div class="idle" id="idle">
+        <div class="ring"><i class="ti ti-camera"></i></div>
+        <h2>Ready when you are</h2>
+        <p>Prop your phone 6–8 ft away with your full body in frame, then tap Start.</p>
+      </div>
+
+      <div class="hud" id="hud" style="display:none">
+        <div class="hud-top">
+          <span class="pill live"><span class="dot"></span>Round <span class="num" id="rounds">0</span></span>
+          <span class="pill" id="cam-pill"><i class="ti ti-camera"></i>Front</span>
+        </div>
+        <div class="hud-bottom">
+          <div class="pose-hud">
+            <div class="ringwrap">
+              <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.16)" stroke-width="5"/>
+                <circle id="hold-ring" cx="26" cy="26" r="22" fill="none" stroke="#1D9E75" stroke-width="5"
+                        stroke-linecap="round" stroke-dasharray="138.2" stroke-dashoffset="138.2"/>
+              </svg>
+              <div class="pct" id="hold-pct">—</div>
+            </div>
+            <div class="meta">
+              <div class="nm"><span class="emoji" id="pose-emoji">🙏</span> <span id="pose-name">—</span></div>
+              <div class="ct" id="pose-ct">Pose 1 of 12</div>
+            </div>
+          </div>
+          <div class="steps" id="steps"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="coach" id="coach">Tap Start to begin your practice</div>
+
+    <div class="dock">
+      <button class="dock-btn" id="flipBtn" onclick="flipCamera()" disabled aria-label="Flip camera">
+        <i class="ti ti-camera-rotate"></i>
+      </button>
+      <button class="start-btn" id="startBtn" onclick="toggleCamera()">
+        <i class="ti ti-player-play"></i> Start
+      </button>
+      <button class="dock-btn" id="resetBtn" onclick="resetAll()" aria-label="Reset">
+        <i class="ti ti-refresh"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Bottom sheet -->
+  <div class="scrim" id="scrim" onclick="closeSheet()"></div>
+  <div class="sheet" id="sheet">
+    <div class="grab"></div>
+    <div class="sheet-head">
+      <h3>The 12 poses</h3>
+      <button class="close" onclick="closeSheet()" aria-label="Close"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="body">
+      <div id="pose-list"></div>
+
+      <div class="tip">
+        <b>For best tracking:</b> stand 6–8 ft back, keep your whole body in frame, and find even lighting.
+        Hold each shape steadily — the ring fills as the pose is confirmed.
+      </div>
+
+      <div class="dbg-toggle" onclick="toggleDebug()">
+        <span><i class="ti ti-bug" style="vertical-align:-2px"></i> Show detection details</span>
+        <span class="switch" id="dbg-switch"></span>
+      </div>
+      <div id="debug-panel"></div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+  <script>
+    const POSE_LIST = [
+      { id:1,  name:"Pranamasana",           hint:"Stand, palms together at chest" },
+      { id:2,  name:"Hasta Uttanasana",       hint:"Arms stretched up, slight backbend" },
+      { id:3,  name:"Hastapadasana",          hint:"Forward fold, hands near feet" },
+      { id:4,  name:"Ashwa Sanchalanasana",   hint:"Right leg back, left knee bent" },
+      { id:5,  name:"Dandasana",              hint:"Plank — body straight" },
+      { id:6,  name:"Ashtanga Namaskara",     hint:"Knees-chest-chin to floor" },
+      { id:7,  name:"Bhujangasana",           hint:"Cobra — chest lifted, hips down" },
+      { id:8,  name:"Adho Mukha Svanasana",   hint:"Downward dog — hips high" },
+      { id:9,  name:"Ashwa Sanchalanasana",   hint:"Left leg back, right knee bent" },
+      { id:10, name:"Hastapadasana",          hint:"Forward fold again" },
+      { id:11, name:"Hasta Uttanasana",       hint:"Arms up, slight backbend" },
+      { id:12, name:"Pranamasana",            hint:"Return to prayer" },
+    ];
+    const EMOJIS = ['🙏','🙆','🤸','🏇','🪵','🙇','🐍','🐕','🏇','🤸','🙆','🙏'];
+
+    const KP = {
+      nose:0, leftShoulder:5, rightShoulder:6,
+      leftElbow:7, rightElbow:8, leftWrist:9, rightWrist:10,
+      leftHip:11, rightHip:12, leftKnee:13, rightKnee:14,
+      leftAnkle:15, rightAnkle:16
+    };
+
+    let detector = null, stream = null, raf = null;
+    let running = false;
+    let poseIdx = 0, rounds = 0, holdFrames = 0;
+    let debugMode = false;
+    let facing = 'user';          // 'user' = front (mirrored), 'environment' = back
+    let wakeLock = null;
+    const HOLD_NEEDED = 14;
+    const RING_C = 2 * Math.PI * 22; // hold-ring circumference
+
+    // --- Look-ahead "don't get stuck" handling ---
+    const STUCK_MS = 3000;
+    const NEXT_HOLD_NEEDED = 8;
+    let poseEnteredAt = performance.now();
+    let nextHoldFrames = 0;
+    let poseStatus = new Array(12).fill('pending'); // 'pending' | 'done' | 'skipped'
+    let warningMsg = '', warningUntil = 0, coachTone = '';
+
+    const mirror = () => facing === 'user';
+    function vibrate(p){ try { if (navigator.vibrate) navigator.vibrate(p); } catch(_){} }
+
+    function angle(a, b, c) {
+      const r = Math.atan2(c[1]-b[1], c[0]-b[0]) - Math.atan2(a[1]-b[1], a[0]-b[0]);
+      let d = Math.abs(r * 180 / Math.PI);
+      return d > 180 ? 360 - d : d;
+    }
+    function kp(lm, name) {
+      const k = lm[KP[name]];
+      return k && k.score > 0.2 ? [k.x, k.y] : null;
+    }
+
+    let lastDebug = null;
+
+    function computeMetrics(lm, w, h) {
+      const ls = kp(lm,'leftShoulder'),  rs = kp(lm,'rightShoulder');
+      const lh = kp(lm,'leftHip'),      rh = kp(lm,'rightHip');
+      const lk = kp(lm,'leftKnee'),     rk = kp(lm,'rightKnee');
+      const la = kp(lm,'leftAnkle'),    ra = kp(lm,'rightAnkle');
+      const lw = kp(lm,'leftWrist'),    rw = kp(lm,'rightWrist');
+      const le = kp(lm,'leftElbow'),    re = kp(lm,'rightElbow');
+      const nose = kp(lm,'nose');
+      if (!ls||!rs||!lh||!rh||!lk||!rk||!la||!ra) return null;
+
+      const mS = [(ls[0]+rs[0])/2, (ls[1]+rs[1])/2];
+      const mH = [(lh[0]+rh[0])/2, (lh[1]+rh[1])/2];
+      const mK = [(lk[0]+rk[0])/2, (lk[1]+rk[1])/2];
+      const mW = lw && rw ? [(lw[0]+rw[0])/2, (lw[1]+rw[1])/2] : null;
+
+      const hipAng  = angle(mS, mH, mK);
+      const kneeL   = angle(lh, lk, la);
+      const kneeR   = angle(rh, rk, ra);
+      const avgKnee = (kneeL + kneeR) / 2;
+      const elbL    = le && lw ? angle(ls, le, lw) : 180;
+      const elbR    = re && rw ? angle(rs, re, rw) : 180;
+
+      return {
+        mS, mH, hipAng, avgKnee, elbL, elbR, h,
+        bodyH:      Math.abs(mS[1]-mH[1]) < 0.12 * h,
+        upright:    hipAng > 155 && avgKnee > 155,
+        torsoFold:  hipAng < 75,
+        armsUp:     mW ? mW[1] < mS[1] - 0.08 * h : false,
+        asymKnee:   Math.abs(kneeL - kneeR) > 45,
+        hipsHigh:   mH[1] < mS[1] - 0.05 * h && mH[1] < mK[1] - 0.05 * h,
+        palmsClose: lw && rw ? Math.abs(lw[0]-rw[0]) < 0.15 * w : false,
+        lowBody:    mS[1] > 0.45 * h,
+        elbowsBent: elbL < 100 && elbR < 100,
+        noseAboveShoulders: nose ? nose[1] < mS[1] : true,
+      };
+    }
+
+    function matchesPose(d, t) {
+      if (t===0||t===11) return d.upright && d.palmsClose && !d.armsUp;
+      if (t===1||t===10) return d.upright && d.armsUp;
+      if (t===2||t===9)  return d.torsoFold && d.avgKnee > 140;
+      if (t===3||t===8)  return d.asymKnee && !d.bodyH && d.mH[1] > 0.45 * d.h;
+      if (t===4)         return d.bodyH && d.avgKnee > 150;
+      if (t===5)         return d.bodyH && d.elbowsBent && d.lowBody;
+      if (t===6)         return d.bodyH && d.mS[1] < d.mH[1] && d.elbL > 110 && d.elbR > 110 && d.noseAboveShoulders;
+      if (t===7)         return d.hipsHigh;
+      return false;
+    }
+
+    /* ---------- UI builders ---------- */
+    function buildSteps() {
+      const s = document.getElementById('steps');
+      s.innerHTML = '';
+      for (let i = 0; i < 12; i++) {
+        const seg = document.createElement('div');
+        seg.className = 'seg'; seg.id = `seg-${i}`;
+        s.appendChild(seg);
+      }
+    }
+    function buildPoseList() {
+      const list = document.getElementById('pose-list');
+      list.innerHTML = '';
+      POSE_LIST.forEach((p, i) => {
+        const row = document.createElement('div');
+        row.className = 'pose-row'; row.id = `pr-${i}`;
+        row.innerHTML = `<div class="ix">${p.id}</div><div class="e">${EMOJIS[i]}</div>
+          <div class="tx"><div class="n">${p.name}</div><div class="h">${p.hint}</div></div>`;
+        list.appendChild(row);
+      });
+    }
+    function refreshSteps() {
+      for (let i = 0; i < 12; i++) {
+        const seg = document.getElementById(`seg-${i}`);
+        if (!seg) continue;
+        let cls = 'seg';
+        if (i === poseIdx) cls += ' active';
+        else if (poseStatus[i] === 'done') cls += ' done';
+        else if (poseStatus[i] === 'skipped') cls += ' skipped';
+        seg.className = cls;
+      }
+      POSE_LIST.forEach((_, i) => {
+        const r = document.getElementById(`pr-${i}`);
+        if (!r) return;
+        let cls = 'pose-row';
+        if (i === poseIdx) cls += ' active';
+        else if (poseStatus[i] === 'done') cls += ' done';
+        else if (poseStatus[i] === 'skipped') cls += ' skipped';
+        r.className = cls;
+      });
+    }
+
+    function advancePose(next) {
+      poseIdx = next;
+      if (poseIdx >= 12) {
+        poseIdx = 0;
+        rounds++;
+        vibrate([40,60,40]);
+        const skippedCount = poseStatus.filter(s => s === 'skipped').length;
+        if (skippedCount > 0) {
+          const names = poseStatus.map((s,i) => s==='skipped' ? POSE_LIST[i].name : null).filter(Boolean);
+          const unique = [...new Set(names)];
+          warningMsg = `Round ${rounds} done! Ease into: ${unique.join(', ')} — counted, but couldn't fully confirm.`;
+          coachTone = 'warn';
+        } else {
+          warningMsg = `Round ${rounds} complete — every pose held cleanly. Beautiful.`;
+          coachTone = 'win';
+        }
+        warningUntil = performance.now() + 3500;
+        poseStatus = new Array(12).fill('pending');
+      }
+      holdFrames = 0;
+      nextHoldFrames = 0;
+      poseEnteredAt = performance.now();
+    }
+
+    /* ---------- status / coaching ---------- */
+    function setCoach(msg, tone) {
+      const c = document.getElementById('coach');
+      c.textContent = msg;
+      c.className = 'coach' + (tone ? ' ' + tone : '');
+    }
+
+    function toggleDebug() {
+      debugMode = !debugMode;
+      document.getElementById('debug-panel').classList.toggle('show', debugMode);
+      document.getElementById('dbg-switch').classList.toggle('on', debugMode);
+      if (!debugMode) document.getElementById('debug-panel').innerHTML = '';
+    }
+    function flag(name, val) { return `<span class="${val ? 'ok' : 'bad'}">${name}:${val ? 'yes' : 'no'}</span>`; }
+    function renderDebugPanel() {
+      const panel = document.getElementById('debug-panel');
+      if (!debugMode) return;
+      if (!lastDebug) { panel.innerHTML = 'No data yet…'; return; }
+      if (lastDebug.missing) { panel.innerHTML = 'Missing a key joint — step back so your full body is visible.'; return; }
+      const d = lastDebug;
+      panel.innerHTML = `
+        <div class="row"><span>Target</span><span>#${d.target+1} ${POSE_LIST[d.target].name}</span></div>
+        <div class="row"><span>Matched?</span><span>${d.result === d.target ? '<span class="ok">YES</span>' : '<span class="bad">no</span>'}</span></div>
+        <div class="row"><span>hipAng / avgKnee</span><span>${d.hipAng}° / ${d.avgKnee}°</span></div>
+        <div class="row"><span>elbowL / elbowR</span><span>${d.elbL}° / ${d.elbR}°</span></div>
+        <div class="row">${flag('upright',d.upright)} ${flag('torsoFold',d.torsoFold)} ${flag('armsUp',d.armsUp)}</div>
+        <div class="row">${flag('asymKnee',d.asymKnee)} ${flag('bodyH',d.bodyH)} ${flag('palmsClose',d.palmsClose)}</div>
+        <div class="row">${flag('hipsHigh',d.hipsHigh)} ${flag('lowBody',d.lowBody)} ${flag('elbowsBent',d.elbowsBent)}</div>`;
+    }
+
+    function updateUI() {
+      document.getElementById('rounds').textContent = rounds;
+      document.getElementById('pose-name').textContent = POSE_LIST[poseIdx].name;
+      document.getElementById('pose-emoji').textContent = EMOJIS[poseIdx];
+      document.getElementById('pose-ct').textContent = `Pose ${poseIdx+1} of 12`;
+      const pctNum = holdFrames > 0 ? Math.round((holdFrames/HOLD_NEEDED)*100) : 0;
+      document.getElementById('hold-pct').textContent = holdFrames > 0 ? pctNum + '%' : '—';
+      document.getElementById('hold-ring').style.strokeDashoffset = RING_C * (1 - Math.min(1, holdFrames/HOLD_NEEDED));
+      refreshSteps();
+    }
+
+    function drawSkeleton(ctx, lm, w, h) {
+      const X = (x) => mirror() ? (w - x) : x;
+      const pairs = [[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
+      ctx.strokeStyle = '#1D9E75'; ctx.lineWidth = 3;
+      pairs.forEach(([a,b]) => {
+        const ka = lm[a], kb = lm[b];
+        if (ka && kb && ka.score > 0.25 && kb.score > 0.25) {
+          ctx.beginPath(); ctx.moveTo(X(ka.x), ka.y); ctx.lineTo(X(kb.x), kb.y); ctx.stroke();
+        }
+      });
+      ctx.fillStyle = '#7F77DD';
+      lm.forEach(k => {
+        if (k && k.score > 0.25) { ctx.beginPath(); ctx.arc(X(k.x), k.y, 5, 0, Math.PI*2); ctx.fill(); }
+      });
+    }
+
+    async function loop() {
+      const vid = document.getElementById('vid');
+      const cv  = document.getElementById('cv');
+      if (!detector || !running) return;
+      cv.width  = vid.videoWidth  || 640;
+      cv.height = vid.videoHeight || 480;
+      const ctx = cv.getContext('2d');
+
+      ctx.save();
+      if (mirror()) { ctx.scale(-1, 1); ctx.drawImage(vid, -cv.width, 0, cv.width, cv.height); }
+      else { ctx.drawImage(vid, 0, 0, cv.width, cv.height); }
+      ctx.restore();
+
+      try {
+        const poses = await detector.estimatePoses(vid, { flipHorizontal: false });
+        if (poses.length > 0) {
+          const lm = poses[0].keypoints;
+          const d = computeMetrics(lm, cv.width, cv.height);
+          const nextIdx = (poseIdx + 1) % 12;
+
+          if (!d) {
+            lastDebug = { missing: true };
+            holdFrames = Math.max(0, holdFrames - 1);
+            if (performance.now() >= warningUntil) setCoach('Missing a key joint — step back so your full body is visible', '');
+          } else {
+            const isMatch = matchesPose(d, poseIdx);
+            lastDebug = {
+              missing: false, target: poseIdx, result: isMatch ? poseIdx : -1,
+              hipAng: d.hipAng.toFixed(0), avgKnee: d.avgKnee.toFixed(0),
+              elbL: d.elbL.toFixed(0), elbR: d.elbR.toFixed(0),
+              bodyH: d.bodyH, upright: d.upright, torsoFold: d.torsoFold, armsUp: d.armsUp,
+              asymKnee: d.asymKnee, hipsHigh: d.hipsHigh, palmsClose: d.palmsClose,
+              lowBody: d.lowBody, elbowsBent: d.elbowsBent
+            };
+
+            if (isMatch) {
+              holdFrames++;
+              nextHoldFrames = 0;
+              if (performance.now() >= warningUntil)
+                setCoach(`Holding ${POSE_LIST[poseIdx].name} · ${Math.round((holdFrames/HOLD_NEEDED)*100)}%`, 'cue');
+              if (holdFrames >= HOLD_NEEDED) {
+                poseStatus[poseIdx] = 'done';
+                const justFinished = poseIdx;
+                vibrate(35);
+                advancePose(poseIdx + 1);
+                if (performance.now() >= warningUntil)
+                  setCoach(`${POSE_LIST[justFinished].name} done — next: ${POSE_LIST[poseIdx].name}`, 'win');
+              }
+            } else {
+              holdFrames = Math.max(0, holdFrames - 1);
+              if (matchesPose(d, nextIdx)) nextHoldFrames++;
+              else nextHoldFrames = Math.max(0, nextHoldFrames - 1);
+
+              const stuckTooLong = (performance.now() - poseEnteredAt) > STUCK_MS;
+              if (stuckTooLong && nextHoldFrames >= NEXT_HOLD_NEEDED) {
+                poseStatus[poseIdx] = 'skipped';
+                const missedName = POSE_LIST[poseIdx].name;
+                const carryHold = nextHoldFrames;
+                const roundsBefore = rounds;
+                advancePose(poseIdx + 1);
+                holdFrames = Math.min(HOLD_NEEDED - 1, carryHold);
+                if (rounds === roundsBefore) {
+                  warningMsg = `Couldn't confirm ${missedName} — counting it so your flow keeps moving. Pause a beat longer there next time.`;
+                  coachTone = 'warn';
+                  warningUntil = performance.now() + 2800;
+                }
+              } else if (performance.now() >= warningUntil) {
+                setCoach(`Next: ${POSE_LIST[poseIdx].name} — ${POSE_LIST[poseIdx].hint}`, '');
+              }
+            }
+          }
+
+          if (performance.now() < warningUntil) setCoach(warningMsg, coachTone);
+          drawSkeleton(ctx, lm, cv.width, cv.height);
+        } else {
+          if (performance.now() >= warningUntil) setCoach('No one in frame — step into view', '');
+          holdFrames = 0; nextHoldFrames = 0; lastDebug = null;
+        }
+      } catch(e) { console.error(e); }
+
+      renderDebugPanel();
+      updateUI();
+      if (running) raf = requestAnimationFrame(loop);
+    }
+
+    /* ---------- camera / lifecycle ---------- */
+    async function requestWake() {
+      try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(_){}
+    }
+    async function releaseWake() {
+      try { if (wakeLock) { await wakeLock.release(); wakeLock = null; } } catch(_){}
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && running && !wakeLock) requestWake();
+    });
+
+    async function openStream() {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: false
+      });
+      const vid = document.getElementById('vid');
+      vid.srcObject = stream;
+      await new Promise(r => vid.onloadedmetadata = r);
+      await vid.play().catch(()=>{});
+      document.getElementById('cam-pill').innerHTML =
+        `<i class="ti ti-camera"></i>${facing === 'user' ? 'Front' : 'Back'}`;
+    }
+
+    async function toggleCamera() {
+      const btn = document.getElementById('startBtn');
+      if (running) {
+        running = false;
+        if (raf) cancelAnimationFrame(raf);
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        releaseWake();
+        btn.innerHTML = '<i class="ti ti-player-play"></i> Start';
+        btn.classList.remove('running');
+        document.getElementById('idle').style.display = 'flex';
+        document.getElementById('hud').style.display = 'none';
+        document.getElementById('vid').style.display = 'none';
+        document.getElementById('flipBtn').disabled = true;
+        setCoach('Paused — tap Start to resume', '');
+        return;
+      }
+
+      btn.innerHTML = '<i class="ti ti-loader-2"></i> Loading…';
+      btn.disabled = true;
+      setCoach('Warming up the pose model…', '');
+
+      try {
+        if (!detector) {
+          await tf.ready();
+          detector = await poseDetection.createDetector(
+            poseDetection.SupportedModels.MoveNet,
+            { modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER }
+          );
+        }
+        setCoach('Starting camera…', '');
+        await openStream();
+        document.getElementById('vid').style.display = 'block';
+        document.getElementById('idle').style.display = 'none';
+        document.getElementById('hud').style.display = 'block';
+        document.getElementById('flipBtn').disabled = false;
+        running = true;
+        poseEnteredAt = performance.now();
+        requestWake();
+        btn.innerHTML = '<i class="ti ti-player-pause"></i> Pause';
+        btn.classList.add('running');
+        btn.disabled = false;
+        setCoach(`Next: ${POSE_LIST[poseIdx].name} — ${POSE_LIST[poseIdx].hint}`, '');
+        loop();
+      } catch(e) {
+        const denied = (e && (e.name === 'NotAllowedError' || e.name === 'NotFoundError'));
+        setCoach(denied ? 'Camera access needed — allow it in your browser settings, then tap Start'
+                        : 'Could not start: ' + (e.message || 'camera or model failed'), 'warn');
+        btn.innerHTML = '<i class="ti ti-player-play"></i> Start';
+        btn.classList.remove('running');
+        btn.disabled = false;
+      }
+    }
+
+    async function flipCamera() {
+      if (!running) return;
+      facing = (facing === 'user') ? 'environment' : 'user';
+      try { await openStream(); }
+      catch(e) {
+        facing = (facing === 'user') ? 'environment' : 'user'; // revert
+        try { await openStream(); } catch(_){}
+        setCoach('No second camera available', '');
+      }
+    }
+
+    function resetAll() {
+      poseIdx = 0; rounds = 0; holdFrames = 0;
+      nextHoldFrames = 0; poseEnteredAt = performance.now();
+      poseStatus = new Array(12).fill('pending');
+      warningMsg = ''; warningUntil = 0; coachTone = '';
+      vibrate(20);
+      updateUI();
+      setCoach(running ? `Next: ${POSE_LIST[0].name} — ${POSE_LIST[0].hint}` : 'Reset — tap Start to begin', '');
+    }
+
+    /* ---------- sheet ---------- */
+    function openSheet()  { document.getElementById('scrim').classList.add('open'); document.getElementById('sheet').classList.add('open'); refreshSteps(); }
+    function closeSheet() { document.getElementById('scrim').classList.remove('open'); document.getElementById('sheet').classList.remove('open'); }
+
+    /* ---------- installable manifest (inline) ---------- */
+    (function injectManifest(){
+      const icon = "data:image/svg+xml," + encodeURIComponent(
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='#1c1c1a'/><circle cx='256' cy='256' r='84' fill='#1D9E75'/><g stroke='#1D9E75' stroke-width='22' stroke-linecap='round'><line x1='256' y1='70' x2='256' y2='126'/><line x1='256' y1='386' x2='256' y2='442'/><line x1='70' y1='256' x2='126' y2='256'/><line x1='386' y1='256' x2='442' y2='256'/><line x1='124' y1='124' x2='164' y2='164'/><line x1='348' y1='348' x2='388' y2='388'/><line x1='388' y1='124' x2='348' y2='164'/><line x1='164' y1='348' x2='124' y2='388'/></g></svg>");
+      const manifest = {
+        name: "Surya Namaskar Counter", short_name: "Surya",
+        display: "standalone", orientation: "portrait",
+        background_color: "#1c1c1a", theme_color: "#1D9E75", start_url: ".",
+        icons: [{ src: icon, sizes: "512x512", type: "image/svg+xml", purpose: "any maskable" }]
+      };
+      const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+      const link = document.createElement('link');
+      link.rel = 'manifest'; link.href = URL.createObjectURL(blob);
+      document.head.appendChild(link);
+    })();
+
+    buildSteps();
+    buildPoseList();
+    updateUI();
+  </script>
+</body>
+</html>
